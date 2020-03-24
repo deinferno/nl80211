@@ -159,6 +159,7 @@ impl Socket {
     /// # }
     ///```
     pub fn get_station_info(&mut self, interface_attr_if_index: &Vec<u8>) -> Result<Station, neli::err::NlError>  {
+        let mut station = Station::default();
         let nl80211sock = &mut self.sock;
 
         let mut attrs: Vec<Nlattr<Nl80211Attr, Vec<u8>>> = vec![];
@@ -182,18 +183,19 @@ impl Socket {
 
         while let Some(Ok(response)) = iter.next() {
             match response.nl_type {
-                    Nlmsg::Error => panic!("Error"),
-                    Nlmsg::Done => break,
-                    _ => {
-                        let  handle = response.nl_payload.get_attr_handle();
-                        return Ok(Station::default().parse(handle));
-                    },
-            };
+                Nlmsg::Error => panic!("Error"),
+                Nlmsg::Done => break,
+                _ => {
+                    let handle = response.nl_payload.get_attr_handle();
+                    station = station.parse(handle);
+                }
+            }
         }
-        return Ok(Station::default())
+        Ok(station)
     }
 
     pub fn get_bss_info(&mut self, interface_attr_if_index: &Vec<u8>) -> Result<Bss, neli::err::NlError> {
+        let mut bss = Bss::default();
         let nl80211sock = &mut self.sock;
 
         let mut attrs: Vec<Nlattr<Nl80211Attr, Vec<u8>>> = vec![];
@@ -218,15 +220,15 @@ impl Socket {
 
         while let Some(Ok(response)) = iter.next() {
             match response.nl_type {
-                    Nlmsg::Error => panic!("Error"),
-                    Nlmsg::Done => break,
-                    _ => {
-                        let  handle = response.nl_payload.get_attr_handle();
-                        return Ok(Bss::default().parse(handle))
-                    }
+                Nlmsg::Error => panic!("Error"),
+                Nlmsg::Done => break,
+                _ => {
+                    let handle = response.nl_payload.get_attr_handle();
+                    bss = bss.parse(handle);
                 }
             }
-        Ok(Bss::default())
+        }
+        Ok(bss)
     }
 
     // pub fn scan(&mut self) -> Result<(), neli::err::NlError> {
