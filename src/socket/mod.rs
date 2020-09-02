@@ -137,29 +137,7 @@ impl Socket {
         Ok(interfaces)
     }
 
-    /// Get access point information for a specific interface
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # use nl80211::Socket;
-    ///
-    /// # fn main() -> Result<(), neli::err::NlError>{
-    ///   // First of all we need to get wifi interface information to get more data
-    ///   let wifi_interfaces = Socket::connect()?.get_interfaces_info();
-    ///   for wifi_interface in wifi_interfaces? {
-    ///     if let Some(netlink_index) = wifi_interface.index {
-    ///
-    ///       // Then for each wifi interface we can fetch station information
-    ///       let station_info = Socket::connect()?.get_station_info(&netlink_index.clone())?;
-    ///           println!("{}", station_info);
-    ///       }
-    ///     }
-    /// #   Ok(())
-    /// # }
-    ///```
-    pub fn get_station_info(&mut self, interface_attr_if_index: &Vec<u8>) -> Result<Station, neli::err::NlError>  {
-        let mut station = Station::default();
+    pub fn get_stations_info(&mut self, interface_attr_if_index: &Vec<u8>) -> Result<Vec<Station>, neli::err::NlError>  {
         let nl80211sock = &mut self.sock;
 
         let mut attrs: Vec<Nlattr<Nl80211Attr, Vec<u8>>> = vec![];
@@ -179,6 +157,8 @@ impl Socket {
 
         nl80211sock.send_nl(nlhdr)?;
 
+        let mut stations:Vec<Station> = Vec::with_capacity(u8::MAX as usize);
+
         let mut iter = nl80211sock.iter::<Nlmsg, Genlmsghdr<Nl80211Cmd, Nl80211Attr>>();
 
         while let Some(Ok(response)) = iter.next() {
@@ -187,11 +167,12 @@ impl Socket {
                 Nlmsg::Done => break,
                 _ => {
                     let handle = response.nl_payload.get_attr_handle();
-                    station = station.parse(handle);
+                    let mut station = Station::default();
+                    stations.push(station.parse(handle));
                 }
             }
         }
-        Ok(station)
+        Ok(stations)
     }
 
     pub fn get_bss_info(&mut self, interface_attr_if_index: &Vec<u8>) -> Result<Bss, neli::err::NlError> {

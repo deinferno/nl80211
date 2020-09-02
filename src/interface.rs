@@ -47,14 +47,15 @@ impl Interface {
         }
     }
 
-    /// Get station info for this interface
-    pub fn get_station_info(&self) -> Result<Station, neli::err::NlError> {
+    /// Get stations info for this interface
+    pub fn get_stations_info(&self) -> Result<Vec<Station>, neli::err::NlError>  {
         if let Some(index) = &self.index {
-            Socket::connect()?.get_station_info(index)
+            Socket::connect()?.get_stations_info(index)
         } else {
             Err(neli::err::NlError::new("Invalid interface index {:?}"))
         }
     }
+
 }
 
 impl ParseNlAttr for Interface {
